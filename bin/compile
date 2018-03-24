@@ -7,6 +7,12 @@ CACHE_DIR=${2:-}
 ENV_DIR=${3:-}
 BUILDPACK=$(cat $ENV_DIR/BUILDPACK)
 
+echo "BUILDPACK $BUILDPACK"
+echo "BUILD_DIR $BUILD_DIR"
+echo "ENV_DIR $ENV_DIR"
+echo "CACHE_DIR $CACHE_DIR"
+
+
 function indent() {
   c='s/^/       /'
   case $(uname) in
@@ -42,8 +48,15 @@ execute_buildpack_at_subdir() {
     BUILDPACK=$(echo $buildpack | cut -d"=" -f 2)
   fi
 
+
+  echo "BUILDPACK $BUILDPACK"
+  echo "subdir $subdir"
+
   url=${BUILDPACK%#*}
   branch=${BUILDPACK#*#}
+
+  echo "branch $branch"
+  echo "url $url"
 
   if [ "$branch" == "$url" ]; then
     branch=""
@@ -74,6 +87,18 @@ execute_buildpack_at_subdir() {
     framework=$($dir/bin/detect $BUILD_DIR/$subdir)
 
     if [ $? == 0 ]; then
+
+      ls $BUILD_DIR/$subdir
+
+      # Copies the Procfile from the subdir to the root directory
+      echo 'Copying Procfile...'
+      cp $BUILD_DIR/$subdir/Procfile $BUILD_DIR/
+
+      # Writes the profile file which initializes paths and sources
+      # other profile files
+      echo 'Creating .profile.d...'
+      write_profile "$BUILD_DIR" "$subdir"
+
       echo "=====> Detected Framework: $framework"
       # echo "-----> Compiling with BUILD_DIR: $1, SUB_DIR: $subdir"
       # echo "-----> Ls BUILD_DIR: $(ls -la $1)"
